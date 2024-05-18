@@ -27,7 +27,6 @@ async function updatePost(gallaryLink, limit = 0) {
     let res = await axios.get(`${gallaryLink}&list_num=100&sort_type=N&page=1`);
     let html = res.data;
     let $ = load(html);
-    console.log('불러오기 완료')
 
     let postNumber = parseInt($(`.listwrap2 .us-post`).attr("data-no"));
     limit = limit || postNumber - lastPostNumber; //limit 0일경우 마지막 크롤링 게시물까지
