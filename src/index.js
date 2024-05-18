@@ -33,11 +33,11 @@ async function updatePost(gallaryLink, limit = 0) {
     for (let idx = 1; idx < 100; idx++) {
         postNumber = $(`.listwrap2 .us-post`).attr("data-no");
         if (!isNaN(parseInt(postNumber))) {
-            if (limit == 0) limit = postNumber - lastPostNumber;
+            limit = limit || postNumber - lastPostNumber;
             //첫 실행 시에는 초기화
             if (lastPostNumber == 0) {
                 data.lastPostNumber = parseInt(postNumber);
-                data.lastUpdateDate = new Date().getTime();
+                data.lastUpdateDate = Date.now();
                 writeFileSync(filePath, JSON.stringify(data));
             }
             firstPostIdx = idx;
@@ -48,30 +48,25 @@ async function updatePost(gallaryLink, limit = 0) {
     let resultArray = [];
     let currentPage = 1
     while (data.lastPostNumber != postNumber || lastPostNumber == 0) {
-        console.log(currentPage)
-        let postElementArray = Array.from($(".listwrap2 .us-post"))
+        const postElementArray = Array.from($(".listwrap2 .us-post"))
         for (let idx = firstPostIdx; postNumber > lastPostNumber && idx < postElementArray.length; idx++) {
             postElement = $(postElementArray[idx]);
-            let postWriterIP = postElement.find('.gall_writer').attr("data-ip");
-            let obj = {
-                "postNumber": 0,
-                "postTitle": "",
-                "postDate": "",
-                "postWriter": ""
-            };
-            obj.postNumber = postElement.find('.gall_num').text();
-            obj.postTitle = postElement.find('td.gall_tit.ub-word > a:nth-child(1)').text().trim();
-            obj.postDate = postElement.find('.gall_date').attr("title");
-            obj.postWriter = `${postElement.find('.gall_writer').attr("data-nick")}(${postWriterIP.length > 0 ? postWriterIP : "고닉"})`;
-
-            resultArray.push(obj);
+            const postWriterIP = postElement.find('.gall_writer').attr("data-ip");
+            resultArray.push(
+                {
+                    "postNumber": parseInt(postElement.find('.gall_num').text()),
+                    "postTitle": postElement.find('td.gall_tit.ub-word > a:nth-child(1)').text().trim(),
+                    "postDate": postElement.find('.gall_date').attr("title"),
+                    "postWriter": `${postElement.find('.gall_writer').attr("data-nick")}(${postWriterIP.length > 0 ? postWriterIP : "고닉"})`
+                }
+            );
 
             //조건 맞으면 탈출
             if (postNumber == lastPostNumber || postNumber == 1 || resultArray.length == limit) break;
         }
         //조건 맞으면 탈출
         if (postNumber == lastPostNumber || postNumber == 1 || resultArray.length == limit) {
-            data.lastUpdateDate = new Date().getTime();
+            data.lastUpdateDate = Date.now();
             data.lastPostNumber = resultArray[0].postNumber;
             data.postInfo = resultArray;
 
