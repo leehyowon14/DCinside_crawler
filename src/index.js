@@ -21,7 +21,7 @@ async function updatePost(gallaryLink, limit = 0) {
     }
 
     let data = JSON.parse(readFileSync(filePath, 'utf8'));
-    let lastPostNumber = data.lastPostNumber;
+    let {lastPostNumber} = data;
     data.gallaryLink = gallaryLink;
 
     let res = await axios.get(`${gallaryLink}&list_num=100&sort_type=N&page=1`);
@@ -30,13 +30,13 @@ async function updatePost(gallaryLink, limit = 0) {
 
     let firstPostIdx, postNumber //변수 초기화
     //공지 등을 제외시킨 첫 게시물이 .listwrap2클래스를 가진 tbody의 몇번째 자식인지 찾기
-    for (let idx = 1; idx < 100; idx++) {
-        postNumber = $(`.listwrap2 .us-post`).attr("data-no");
-        if (!isNaN(parseInt(postNumber))) {
+    for (let idx = 0; idx < 100; idx++) {
+        postNumber = parseInt($(`.listwrap2 .us-post`).attr("data-no"));
+        if (!isNaN(postNumber)) {
             limit = limit || postNumber - lastPostNumber;
             //첫 실행 시에는 초기화
             if (lastPostNumber == 0) {
-                data.lastPostNumber = parseInt(postNumber);
+                data.lastPostNumber = postNumber;
                 data.lastUpdateDate = Date.now();
                 writeFileSync(filePath, JSON.stringify(data));
             }
@@ -47,14 +47,17 @@ async function updatePost(gallaryLink, limit = 0) {
 
     let resultArray = [];
     let currentPage = 1
-    while (data.lastPostNumber != postNumber || lastPostNumber == 0) {
+    while (lastPostNumber != postNumber && lastPostNumber != 0) {
         const postElementArray = Array.from($(".listwrap2 .us-post"))
-        for (let idx = firstPostIdx; postNumber > lastPostNumber && idx < postElementArray.length; idx++) {
+        for (let idx = firstPostIdx; idx < postElementArray.length; idx++) {
             postElement = $(postElementArray[idx]);
+            postNumber = parseInt(postElement.find('.gall_num').text())
+            if (postNumber == lastPostNumber || postNumber == 1 || resultArray.length == limit) break;
+
             const postWriterIP = postElement.find('.gall_writer').attr("data-ip");
             resultArray.push(
                 {
-                    "postNumber": parseInt(postElement.find('.gall_num').text()),
+                    "postNumber": postNumber,
                     "postTitle": postElement.find('td.gall_tit.ub-word > a:nth-child(1)').text().trim(),
                     "postDate": postElement.find('.gall_date').attr("title"),
                     "postWriter": `${postElement.find('.gall_writer').attr("data-nick")}(${postWriterIP.length > 0 ? postWriterIP : "고닉"})`
@@ -62,7 +65,6 @@ async function updatePost(gallaryLink, limit = 0) {
             );
 
             //조건 맞으면 탈출
-            if (postNumber == lastPostNumber || postNumber == 1 || resultArray.length == limit) break;
         }
         //조건 맞으면 탈출
         if (postNumber == lastPostNumber || postNumber == 1 || resultArray.length == limit) {
