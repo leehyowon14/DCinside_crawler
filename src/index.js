@@ -29,6 +29,16 @@ async function updatePost(gallaryLink, limit = 0) {
     let $ = load(html);
 
     let postNumber = parseInt($(`.listwrap2 .us-post`).attr("data-no"));
+
+    if (postNumber <= lastPostNumber) {
+        data.lastUpdateDate = Date.now();
+        data.lastPostNumber = postNumber
+        data.postInfo = [];
+
+        writeFileSync(filePath, JSON.stringify(data));
+        return [];
+    }
+
     limit = limit || postNumber - lastPostNumber; //limit 0일경우 마지막 크롤링 게시물까지
 
     let resultArray = [];
